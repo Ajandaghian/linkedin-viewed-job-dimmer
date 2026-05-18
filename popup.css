@@ -7,7 +7,7 @@
 html,
 body {
   margin: 0;
-  width: 340px;
+  width: 380px;
   min-height: 100%;
 }
 
@@ -48,6 +48,106 @@ h1 {
 
 .copy strong {
   color: #ffffff;
+}
+
+.settings-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 4px 0 16px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.settings-copy {
+  min-width: 0;
+}
+
+.settings-label {
+  margin: 0 0 4px;
+  color: #89a3cb;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.settings-title {
+  margin: 0;
+  color: #f3f7fd;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.settings-desc {
+  margin: 4px 0 0;
+  color: #c3d1e4;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.switch-track {
+  position: relative;
+  width: 52px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(107, 114, 128, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: background 160ms ease, border-color 160ms ease;
+  flex-shrink: 0;
+}
+
+.switch-thumb {
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: #f8fafc;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.switch input:checked + .switch-track {
+  background: linear-gradient(135deg, #0a66c2, #1b8ef2);
+  border-color: rgba(145, 202, 255, 0.55);
+}
+
+.switch input:checked + .switch-track .switch-thumb {
+  transform: translate(22px, -50%);
+}
+
+.switch input:focus-visible + .switch-track {
+  outline: 3px solid rgba(145, 202, 255, 0.85);
+  outline-offset: 2px;
+}
+
+.switch-text {
+  color: #dbe7f7;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .primary-button {

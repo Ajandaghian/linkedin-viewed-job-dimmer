@@ -15,10 +15,28 @@
         <strong>Viewed</strong>, but mutes them into a dark gray disabled style.
       </p>
 
+      <section class="settings-card" aria-label="Run mode settings">
+        <div class="settings-copy">
+          <p class="settings-label">Mode</p>
+          <p class="settings-title" id="modeTitle">Only when selected</p>
+          <p class="settings-desc" id="modeDescription">
+            Dims viewed jobs only after you click the button.
+          </p>
+        </div>
+
+        <label class="switch">
+          <input id="alwaysOnToggle" type="checkbox" />
+          <span class="switch-track" aria-hidden="true">
+            <span class="switch-thumb"></span>
+          </span>
+          <span class="switch-text" id="switchText">Always run</span>
+        </label>
+      </section>
+
       <button id="dimButton" class="primary-button" type="button">Dim viewed jobs</button>
 
       <div id="status" class="status" aria-live="polite">
-        Open a LinkedIn jobs tab, then click the button above.
+        Open a LinkedIn jobs tab, then choose a mode or click the button above.
       </div>
     </main>
 

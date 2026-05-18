@@ -3,22 +3,60 @@
   const HOST_ID = "li-viewed-remover-host";
   const STYLE_ID = "li-viewed-remover-style";
   const CARD_STYLE_ID = "li-viewed-remover-card-style";
+  const STORAGE_KEY = "liViewedRemoverAlwaysOn";
   const BUTTON_ID = "li-viewed-remover-button";
   const STATUS_ID = "li-viewed-remover-status";
 
   const state = window[GLOBAL_KEY] || (window[GLOBAL_KEY] = {
     bootstrapped: false,
-    enabled: false,
+    autoEnabled: false,
+    manualEnabled: false,
     cleanupQueued: false,
     observer: null,
     host: null,
     button: null,
     status: null,
+    storageInitialized: false,
+    storageListenerAttached: false,
     messageListenerAttached: false
   });
 
   function isLinkedInJobsPage() {
     return location.hostname === "www.linkedin.com" && /^\/jobs\//.test(location.pathname);
+  }
+
+  function hasActiveMode() {
+    return state.autoEnabled || state.manualEnabled;
+  }
+
+  function getStoredValue(key, defaultValue) {
+    return new Promise((resolve, reject) => {
+      try {
+        chrome.storage.local.get({ [key]: defaultValue }, (items) => {
+          const error = chrome.runtime && chrome.runtime.lastError;
+          if (error) {
+            reject(new Error(error.message));
+            return;
+          }
+
+          resolve(items?.[key] ?? defaultValue);
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  function setObserverActive(active) {
+    if (!active) {
+      if (state.observer) {
+        state.observer.disconnect();
+        state.observer = null;
+      }
+      return;
+    }
+
+    startObserver();
   }
 
   function ensureStyles(shadowRoot) {
@@ -128,12 +166,6 @@
       .status[data-tone="error"] {
         background: rgba(239, 68, 68, 0.16);
         border-color: rgba(239, 68, 68, 0.28);
-      }
-
-      .card-leaving {
-        opacity: 0 !important;
-        transform: translateX(-10px) scale(0.985);
-        transition: opacity 180ms ease, transform 180ms ease;
       }
     `;
     shadowRoot.appendChild(style);
@@ -277,20 +309,28 @@
   }
 
   function scheduleCleanup() {
-    if (!state.enabled || state.cleanupQueued) {
+    if (!hasActiveMode() || state.cleanupQueued) {
       return;
     }
 
     state.cleanupQueued = true;
     queueMicrotask(() => {
       state.cleanupQueued = false;
-      if (state.enabled) {
+      if (hasActiveMode()) {
         dimViewedJobs({ quiet: true });
       }
     });
   }
 
   function startObserver() {
+    if (!hasActiveMode()) {
+      if (state.observer) {
+        state.observer.disconnect();
+        state.observer = null;
+      }
+      return;
+    }
+
     if (state.observer) {
       return;
     }
@@ -301,7 +341,7 @@
     }
 
     state.observer = new MutationObserver(() => {
-      if (state.enabled) {
+      if (hasActiveMode()) {
         scheduleCleanup();
       }
     });
@@ -313,7 +353,7 @@
   }
 
   function activateCleanup() {
-    state.enabled = true;
+    state.manualEnabled = true;
     startObserver();
 
     const dimmed = dimViewedJobs({ quiet: true });
@@ -325,6 +365,53 @@
     );
 
     return dimmed;
+  }
+
+  function applyAlwaysOnSetting(alwaysOn, options = {}) {
+    state.autoEnabled = Boolean(alwaysOn);
+    setObserverActive(hasActiveMode());
+
+    if (!isLinkedInJobsPage()) {
+      return;
+    }
+
+    const { announce = true } = options;
+    if (!announce) {
+      return;
+    }
+
+    if (state.autoEnabled) {
+      const dimmed = dimViewedJobs({ quiet: true });
+      setStatus(
+        dimmed > 0
+          ? `Always run is on. Dimmed ${dimmed} viewed job${dimmed === 1 ? "" : "s"}.`
+          : "Always run is on. Watching for more viewed jobs.",
+        dimmed > 0 ? "ok" : "info"
+      );
+      return;
+    }
+
+    if (!state.manualEnabled) {
+      setStatus(
+        "Only when selected is on. Use the button to dim viewed jobs on this page.",
+        "info"
+      );
+    }
+  }
+
+  async function initializeAlwaysOnSetting() {
+    if (state.storageInitialized) {
+      return;
+    }
+
+    state.storageInitialized = true;
+
+    try {
+      const alwaysOn = await getStoredValue(STORAGE_KEY, false);
+      applyAlwaysOnSetting(Boolean(alwaysOn), { announce: true });
+    } catch (error) {
+      console.error("LinkedIn dimmer failed to read settings:", error);
+    }
   }
 
   function ensurePanel() {
@@ -404,6 +491,24 @@
 
     state.bootstrapped = true;
     ensurePanel();
+    attachStorageListener();
+    initializeAlwaysOnSetting();
+  }
+
+  function attachStorageListener() {
+    if (state.storageListenerAttached || typeof chrome === "undefined" || !chrome.storage || !chrome.storage.onChanged) {
+      return;
+    }
+
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName !== "local" || !changes[STORAGE_KEY]) {
+        return;
+      }
+
+      applyAlwaysOnSetting(Boolean(changes[STORAGE_KEY].newValue), { announce: true });
+    });
+
+    state.storageListenerAttached = true;
   }
 
   window.__liViewedRemoverRunCleanup = activateCleanup;
@@ -423,12 +528,14 @@
       if (message.type === "li-viewed-remover:dim" || message.type === "li-viewed-remover:clean") {
         const dimmed = activateCleanup();
         sendResponse({ ok: true, dimmed });
+        return;
       }
 
       if (message.type === "li-viewed-remover:status") {
         sendResponse({
           ok: true,
-          enabled: state.enabled,
+          autoEnabled: state.autoEnabled,
+          manualEnabled: state.manualEnabled,
           bootstrapped: state.bootstrapped
         });
       }

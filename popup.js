@@ -1,5 +1,11 @@
 const dimButton = document.getElementById("dimButton");
+const alwaysOnToggle = document.getElementById("alwaysOnToggle");
+const modeTitle = document.getElementById("modeTitle");
+const modeDescription = document.getElementById("modeDescription");
+const switchText = document.getElementById("switchText");
 const statusNode = document.getElementById("status");
+
+const STORAGE_KEY = "liViewedRemoverAlwaysOn";
 
 function setStatus(message, tone = "") {
   statusNode.textContent = message;
@@ -8,6 +14,51 @@ function setStatus(message, tone = "") {
   } else {
     statusNode.removeAttribute("data-tone");
   }
+}
+
+function setModeText(alwaysOn) {
+  alwaysOnToggle.checked = alwaysOn;
+  modeTitle.textContent = alwaysOn ? "Always run" : "Only when selected";
+  modeDescription.textContent = alwaysOn
+    ? "Viewed jobs are dimmed automatically on every LinkedIn jobs page."
+    : "Viewed jobs are only dimmed after you click the button.";
+  switchText.textContent = "Always run";
+}
+
+function storageGet(defaultValue) {
+  return new Promise((resolve, reject) => {
+    try {
+      chrome.storage.local.get({ [STORAGE_KEY]: defaultValue }, (items) => {
+        const error = chrome.runtime && chrome.runtime.lastError;
+        if (error) {
+          reject(new Error(error.message));
+          return;
+        }
+
+        resolve(items?.[STORAGE_KEY] ?? defaultValue);
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+function storageSet(alwaysOn) {
+  return new Promise((resolve, reject) => {
+    try {
+      chrome.storage.local.set({ [STORAGE_KEY]: alwaysOn }, () => {
+        const error = chrome.runtime && chrome.runtime.lastError;
+        if (error) {
+          reject(new Error(error.message));
+          return;
+        }
+
+        resolve();
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
 }
 
 async function getActiveTab() {
@@ -24,6 +75,17 @@ async function ensureContentScript(tabId) {
     target: { tabId },
     files: ["content.js"]
   });
+}
+
+async function setAlwaysOn(alwaysOn) {
+  await storageSet(alwaysOn);
+  setModeText(alwaysOn);
+  setStatus(
+    alwaysOn
+      ? "Always run is on. Viewed jobs will dim automatically."
+      : "Only when selected is on. Click the button to dim viewed jobs.",
+    "info"
+  );
 }
 
 async function runDimming() {
@@ -76,4 +138,25 @@ async function runDimming() {
   }
 }
 
+async function initializePopup() {
+  try {
+    const alwaysOn = Boolean(await storageGet(false));
+    setModeText(alwaysOn);
+    setStatus(
+      alwaysOn
+        ? "Always run is on. Viewed jobs will dim automatically."
+        : "Only when selected is on. Click the button to dim viewed jobs.",
+      "info"
+    );
+  } catch (error) {
+    setModeText(false);
+    setStatus(error?.message || "Failed to load the saved setting.", "error");
+  }
+}
+
 dimButton.addEventListener("click", runDimming);
+alwaysOnToggle.addEventListener("change", () => {
+  void setAlwaysOn(alwaysOnToggle.checked);
+});
+
+void initializePopup();
