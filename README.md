@@ -1,14 +1,13 @@
 # LinkedIn Viewed Job Remover
 
-Chrome extension that removes viewed jobs from the LinkedIn jobs search list and labels job titles with a language flag.
+Chrome extension that removes viewed jobs from the LinkedIn jobs search list.
 
 ## What it does
 
 - Detects job cards in `li[data-occludable-job-id]`
 - Removes cards whose footer state says `Viewed`
 - Keeps watching the page so newly loaded viewed jobs are removed too
-- Fetches each job page, reads the description text, and adds a flag beside the title for the detected language
-- Adds a small on-page panel plus a popup menu for manual runs
+- Adds a small on-page button plus a popup button for manual runs
 
 ## Install
 
@@ -21,4 +20,5 @@ Chrome extension that removes viewed jobs from the LinkedIn jobs search list and
 
 - Open a LinkedIn jobs search page
 - Click the extension icon
-- Press `Remove viewed jobs` or `Detect language flags`
+- Press `Remove viewed jobs`
+

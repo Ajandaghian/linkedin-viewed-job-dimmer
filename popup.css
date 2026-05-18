@@ -7,7 +7,7 @@
 html,
 body {
   margin: 0;
-  width: 360px;
+  width: 340px;
   min-height: 100%;
 }
 
@@ -50,12 +50,6 @@ h1 {
   color: #ffffff;
 }
 
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
 .primary-button {
   width: 100%;
   appearance: none;
@@ -72,31 +66,9 @@ h1 {
   transition: transform 140ms ease, filter 140ms ease, box-shadow 140ms ease;
 }
 
-.secondary-button {
-  width: 100%;
-  appearance: none;
-  border-radius: 999px;
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: #f3f7fd;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  box-shadow: none;
-  transition: transform 140ms ease, filter 140ms ease, border-color 140ms ease, background 140ms ease;
-}
-
 .primary-button:hover {
   transform: translateY(-1px);
   filter: brightness(1.04);
-}
-
-.secondary-button:hover {
-  transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.11);
-  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .primary-button:active {
@@ -104,17 +76,7 @@ h1 {
   filter: brightness(0.98);
 }
 
-.secondary-button:active {
-  transform: translateY(0);
-  filter: brightness(0.98);
-}
-
 .primary-button:focus-visible {
-  outline: 3px solid rgba(145, 202, 255, 0.85);
-  outline-offset: 2px;
-}
-
-.secondary-button:focus-visible {
   outline: 3px solid rgba(145, 202, 255, 0.85);
   outline-offset: 2px;
 }

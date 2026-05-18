@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "name": "LinkedIn Viewed Job Remover",
-  "version": "1.1.0",
-  "description": "Removes viewed jobs and labels LinkedIn job language with flags.",
+  "version": "1.0.0",
+  "description": "Removes viewed jobs from LinkedIn job search results.",
   "permissions": ["activeTab", "scripting", "tabs"],
   "host_permissions": ["https://www.linkedin.com/jobs/*"],
   "action": {
-    "default_title": "LinkedIn job tools",
+    "default_title": "Remove viewed jobs",
     "default_popup": "popup.html"
   },
   "content_scripts": [
