@@ -2,6 +2,7 @@
   const GLOBAL_KEY = "__liViewedRemoverState";
   const HOST_ID = "li-viewed-remover-host";
   const STYLE_ID = "li-viewed-remover-style";
+  const CARD_STYLE_ID = "li-viewed-remover-card-style";
   const BUTTON_ID = "li-viewed-remover-button";
   const STATUS_ID = "li-viewed-remover-status";
 
@@ -138,6 +139,48 @@
     shadowRoot.appendChild(style);
   }
 
+  function ensureCardStyles() {
+    const css = `
+      li[data-occludable-job-id].li-viewed-remover-dimmed {
+        opacity: 0.62 !important;
+        filter: grayscale(1) saturate(0.06) brightness(0.92) contrast(0.96) !important;
+      }
+
+      li[data-occludable-job-id].li-viewed-remover-dimmed,
+      li[data-occludable-job-id].li-viewed-remover-dimmed * {
+        color: #6b7280 !important;
+        text-shadow: none !important;
+      }
+
+      li[data-occludable-job-id].li-viewed-remover-dimmed .job-card-container,
+      li[data-occludable-job-id].li-viewed-remover-dimmed .artdeco-entity-lockup,
+      li[data-occludable-job-id].li-viewed-remover-dimmed .job-card-container--clickable {
+        background: rgba(31, 41, 55, 0.03) !important;
+      }
+
+      li[data-occludable-job-id].li-viewed-remover-dimmed a[href*="/jobs/view/"] {
+        pointer-events: none !important;
+        cursor: default !important;
+        text-decoration: none !important;
+      }
+
+      li[data-occludable-job-id].li-viewed-remover-dimmed .job-card-container__footer-job-state {
+        color: #6b7280 !important;
+      }
+    `;
+
+    const existing = document.getElementById(CARD_STYLE_ID);
+    if (existing) {
+      existing.textContent = css;
+      return;
+    }
+
+    const style = document.createElement("style");
+    style.id = CARD_STYLE_ID;
+    style.textContent = css;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
   function ensureHost() {
     if (state.host && state.host.isConnected && state.host.shadowRoot) {
       ensureStyles(state.host.shadowRoot);
@@ -193,49 +236,44 @@
     return /\bViewed\b/i.test(text);
   }
 
-  function removeCard(card) {
+  function dimCard(card) {
     const item = card.closest("li[data-occludable-job-id]") || card;
-    if (!item || item.dataset.liViewedRemoverRemoved === "1") {
+    if (!item || item.dataset.liViewedRemoverDimmed === "1") {
       return false;
     }
 
-    item.dataset.liViewedRemoverRemoved = "1";
-    item.classList.add("card-leaving");
-
-    window.setTimeout(() => {
-      if (item.isConnected) {
-        item.remove();
-      }
-    }, 180);
+    item.dataset.liViewedRemoverDimmed = "1";
+    item.classList.add("li-viewed-remover-dimmed");
+    ensureCardStyles();
 
     return true;
   }
 
-  function cleanViewedJobs(options = {}) {
+  function dimViewedJobs(options = {}) {
     if (!isLinkedInJobsPage()) {
       return 0;
     }
 
     const { quiet = false } = options;
     const cards = getJobCards();
-    let removed = 0;
+    let dimmed = 0;
 
     for (const card of cards) {
-      if (isViewedCard(card) && removeCard(card)) {
-        removed += 1;
+      if (isViewedCard(card) && dimCard(card)) {
+        dimmed += 1;
       }
     }
 
     if (!quiet) {
       setStatus(
-        removed > 0
-          ? `Removed ${removed} viewed job${removed === 1 ? "" : "s"}.`
-          : "No viewed jobs found.",
-        removed > 0 ? "ok" : "info"
+        dimmed > 0
+          ? `Dimmed ${dimmed} viewed job${dimmed === 1 ? "" : "s"}.`
+          : "No viewed jobs found to dim.",
+        dimmed > 0 ? "ok" : "info"
       );
     }
 
-    return removed;
+    return dimmed;
   }
 
   function scheduleCleanup() {
@@ -247,7 +285,7 @@
     queueMicrotask(() => {
       state.cleanupQueued = false;
       if (state.enabled) {
-        cleanViewedJobs({ quiet: true });
+        dimViewedJobs({ quiet: true });
       }
     });
   }
@@ -278,15 +316,15 @@
     state.enabled = true;
     startObserver();
 
-    const removed = cleanViewedJobs({ quiet: true });
+    const dimmed = dimViewedJobs({ quiet: true });
     setStatus(
-      removed > 0
-        ? `Removed ${removed} viewed job${removed === 1 ? "" : "s"}. Watching for more.`
-        : "No viewed jobs found. Watching for more.",
-      removed > 0 ? "ok" : "info"
+      dimmed > 0
+        ? `Dimmed ${dimmed} viewed job${dimmed === 1 ? "" : "s"}. Watching for more.`
+        : "No viewed jobs found to dim. Watching for more.",
+      dimmed > 0 ? "ok" : "info"
     );
 
-    return removed;
+    return dimmed;
   }
 
   function ensurePanel() {
@@ -294,6 +332,29 @@
 
     let panel = shadowRoot.querySelector(".panel");
     if (panel) {
+      const title = panel.querySelector(".title");
+      const copy = panel.querySelector(".copy");
+      const button = panel.querySelector(`#${BUTTON_ID}`);
+      const status = panel.querySelector(`#${STATUS_ID}`);
+
+      if (title) {
+        title.textContent = "Dim viewed jobs";
+      }
+
+      if (copy) {
+        copy.textContent = "Runs on the open search page and keeps viewed cards in place while muting them to dark gray as new results load.";
+      }
+
+      if (button) {
+        button.textContent = "Dim viewed jobs";
+      }
+
+      if (status) {
+        status.textContent = "Ready to dim the current LinkedIn results list.";
+      }
+
+      state.button = button || state.button;
+      state.status = status || state.status;
       return panel;
     }
 
@@ -306,17 +367,17 @@
 
     const title = document.createElement("p");
     title.className = "title";
-    title.textContent = "Remove viewed jobs";
+    title.textContent = "Dim viewed jobs";
 
     const copy = document.createElement("p");
     copy.className = "copy";
-    copy.textContent = "Runs on the open search page and keeps removing cards marked Viewed as new results load.";
+    copy.textContent = "Runs on the open search page and keeps viewed cards in place while muting them to dark gray as new results load.";
 
     const button = document.createElement("button");
     button.id = BUTTON_ID;
     button.type = "button";
     button.className = "button";
-    button.textContent = "Clean viewed jobs";
+    button.textContent = "Dim viewed jobs";
     button.addEventListener("click", () => {
       activateCleanup();
     });
@@ -325,7 +386,7 @@
     status.id = STATUS_ID;
     status.className = "status";
     status.dataset.tone = "info";
-    status.textContent = "Ready to clean the current LinkedIn results list.";
+    status.textContent = "Ready to dim the current LinkedIn results list.";
 
     panel.append(eyebrow, title, copy, button, status);
     shadowRoot.appendChild(panel);
@@ -337,7 +398,7 @@
   }
 
   function bootstrap() {
-    if (state.bootstrapped || !isLinkedInJobsPage()) {
+    if (!isLinkedInJobsPage()) {
       return;
     }
 
@@ -346,7 +407,8 @@
   }
 
   window.__liViewedRemoverRunCleanup = activateCleanup;
-  window.__liViewedRemoverCleanOnce = cleanViewedJobs;
+  window.__liViewedRemoverRunDimming = activateCleanup;
+  window.__liViewedRemoverCleanOnce = dimViewedJobs;
 
   if (isLinkedInJobsPage()) {
     bootstrap();
@@ -358,9 +420,9 @@
         return;
       }
 
-      if (message.type === "li-viewed-remover:clean") {
-        const removed = activateCleanup();
-        sendResponse({ ok: true, removed });
+      if (message.type === "li-viewed-remover:dim" || message.type === "li-viewed-remover:clean") {
+        const dimmed = activateCleanup();
+        sendResponse({ ok: true, dimmed });
       }
 
       if (message.type === "li-viewed-remover:status") {

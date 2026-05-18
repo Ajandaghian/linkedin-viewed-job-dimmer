@@ -3,19 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LinkedIn Viewed Job Remover</title>
+    <title>LinkedIn Viewed Job Dimmer</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <main class="shell">
       <p class="eyebrow">LinkedIn jobs</p>
-      <h1>Remove viewed jobs</h1>
+      <h1>Dim viewed jobs</h1>
       <p class="copy">
-        Run this on the active LinkedIn jobs tab. It removes cards whose footer says
-        <strong>Viewed</strong> and keeps cleaning new results that appear afterward.
+        Run this on the active LinkedIn jobs tab. It keeps cards whose footer says
+        <strong>Viewed</strong>, but mutes them into a dark gray disabled style.
       </p>
 
-      <button id="cleanButton" class="primary-button" type="button">Remove viewed jobs</button>
+      <button id="dimButton" class="primary-button" type="button">Dim viewed jobs</button>
 
       <div id="status" class="status" aria-live="polite">
         Open a LinkedIn jobs tab, then click the button above.

@@ -1,12 +1,12 @@
-# LinkedIn Viewed Job Remover
+# LinkedIn Viewed Job Dimmer
 
-Chrome extension that removes viewed jobs from the LinkedIn jobs search list.
+Chrome extension that dims viewed jobs in the LinkedIn jobs search list instead of removing them.
 
 ## What it does
 
 - Detects job cards in `li[data-occludable-job-id]`
-- Removes cards whose footer state says `Viewed`
-- Keeps watching the page so newly loaded viewed jobs are removed too
+- Detects cards whose footer state says `Viewed`
+- Keeps watching the page so newly loaded viewed jobs stay dimmed too
 - Adds a small on-page button plus a popup button for manual runs
 
 ## Install
@@ -20,5 +20,4 @@ Chrome extension that removes viewed jobs from the LinkedIn jobs search list.
 
 - Open a LinkedIn jobs search page
 - Click the extension icon
-- Press `Remove viewed jobs`
-
+- Press `Dim viewed jobs`

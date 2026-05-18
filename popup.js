@@ -1,4 +1,4 @@
-const cleanButton = document.getElementById("cleanButton");
+const dimButton = document.getElementById("dimButton");
 const statusNode = document.getElementById("status");
 
 function setStatus(message, tone = "") {
@@ -26,8 +26,8 @@ async function ensureContentScript(tabId) {
   });
 }
 
-async function runCleanup() {
-  cleanButton.disabled = true;
+async function runDimming() {
+  dimButton.disabled = true;
   setStatus("Checking the active tab...");
 
   try {
@@ -41,12 +41,16 @@ async function runCleanup() {
     let response;
     try {
       response = await chrome.tabs.sendMessage(tab.id, {
-        type: "li-viewed-remover:clean"
+        type: "li-viewed-remover:dim"
       });
     } catch (_messageError) {
       const [result] = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: () => {
+          if (typeof window.__liViewedRemoverRunDimming === "function") {
+            return window.__liViewedRemoverRunDimming();
+          }
+
           if (typeof window.__liViewedRemoverRunCleanup === "function") {
             return window.__liViewedRemoverRunCleanup();
           }
@@ -55,21 +59,21 @@ async function runCleanup() {
         }
       });
 
-      response = { removed: result?.result || 0 };
+      response = { dimmed: result?.result || 0 };
     }
 
-    const removed = response?.removed || 0;
+    const dimmed = response?.dimmed || 0;
     setStatus(
-      removed > 0
-        ? `Removed ${removed} viewed job${removed === 1 ? "" : "s"}.`
-        : "No viewed jobs found on this page.",
-      removed > 0 ? "ok" : "info"
+      dimmed > 0
+        ? `Dimmed ${dimmed} viewed job${dimmed === 1 ? "" : "s"}.`
+        : "No viewed jobs found to dim on this page.",
+      dimmed > 0 ? "ok" : "info"
     );
   } catch (error) {
-    setStatus(error?.message || "Failed to run the cleanup.", "error");
+    setStatus(error?.message || "Failed to dim the jobs.", "error");
   } finally {
-    cleanButton.disabled = false;
+    dimButton.disabled = false;
   }
 }
 
-cleanButton.addEventListener("click", runCleanup);
+dimButton.addEventListener("click", runDimming);
