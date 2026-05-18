@@ -162,19 +162,6 @@ alwaysOnToggle.addEventListener("change", async () => {
     await writeAlwaysOnSetting(nextValue);
     setModeText(nextValue);
 
-    const tab = await getActiveTab();
-    if (tab && tab.id && isLinkedInJobsUrl(tab.url)) {
-      try {
-        await ensureContentScript(tab.id);
-        await chrome.tabs.sendMessage(tab.id, {
-          type: "li-viewed-remover:set-mode",
-          alwaysOn: nextValue
-        });
-      } catch (_messageError) {
-        // The content script also listens to storage changes, so this is best-effort.
-      }
-    }
-
     setStatus(
       nextValue
         ? "Always run is on. Viewed jobs will dim automatically."
