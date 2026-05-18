@@ -1,6 +1,6 @@
-# JobShade Privacy Policy
+# LinkedIn Viewed Job Dimmer Privacy Policy
 
-JobShade is designed to run locally in the browser.
+LinkedIn Viewed Job Dimmer is designed to run locally in the browser.
 
 What it collects:
 
@@ -15,6 +15,6 @@ How storage is used:
 
 Third parties:
 
-- JobShade does not share data with third parties
+- LinkedIn Viewed Job Dimmer does not share data with third parties
 
 If you have questions about this extension, contact the publisher through the Chrome Web Store listing or repository.

@@ -401,8 +401,8 @@
       const dimmed = dimViewedJobs({ quiet: true });
       setStatus(
         dimmed > 0
-          ? `JobShade is on. Dimmed ${dimmed} viewed job${dimmed === 1 ? "" : "s"}.`
-          : "JobShade is on. Watching for more viewed jobs.",
+          ? `LinkedIn Viewed Job Dimmer is on. Dimmed ${dimmed} viewed job${dimmed === 1 ? "" : "s"}.`
+          : "LinkedIn Viewed Job Dimmer is on. Watching for more viewed jobs.",
         dimmed > 0 ? "ok" : "info"
       );
       return;
@@ -410,7 +410,7 @@
 
     if (!state.manualEnabled) {
       setStatus(
-        "JobShade is in manual mode. Use the button to dim viewed jobs on this page.",
+        "LinkedIn Viewed Job Dimmer is in manual mode. Use the button to dim viewed jobs on this page.",
         "info"
       );
     }
@@ -453,7 +453,7 @@
       const status = panel.querySelector(`#${STATUS_ID}`);
 
       if (title) {
-        title.textContent = "JobShade";
+          title.textContent = "LinkedIn Viewed Job Dimmer";
       }
 
       if (copy) {
@@ -478,7 +478,7 @@
 
     const eyebrow = document.createElement("p");
     eyebrow.className = "eyebrow";
-    eyebrow.textContent = "JobShade";
+    eyebrow.textContent = "LinkedIn Viewed Job Dimmer";
 
     const title = document.createElement("p");
     title.className = "title";

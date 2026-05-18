@@ -1,8 +1,8 @@
-# JobShade
+# LinkedIn Viewed Job Dimmer
 
-![JobShade promo](assets/store/jobshade-promo-1.png)
+![LinkedIn Viewed Job Dimmer promo](assets/store/linkedin-viewed-job-dimmer-promo-1.png)
 
-JobShade dims viewed LinkedIn job cards in place instead of removing them.
+LinkedIn Viewed Job Dimmer dims viewed LinkedIn job cards in place instead of removing them.
 
 ## What it does
 
@@ -15,7 +15,7 @@ JobShade dims viewed LinkedIn job cards in place instead of removing them.
 
 ## Screenshots
 
-![JobShade popup](assets/store/jobshade-promo-2.png)
+![LinkedIn Viewed Job Dimmer popup](assets/store/linkedin-viewed-job-dimmer-promo-2.png)
 
 ## Install
 
@@ -28,7 +28,7 @@ JobShade dims viewed LinkedIn job cards in place instead of removing them.
 ## Use
 
 - Open a live LinkedIn jobs search page
-- Click the JobShade extension icon
+- Click the LinkedIn Viewed Job Dimmer extension icon
 - Choose `Always run` if you want automatic dimming
 - Otherwise leave `Only when selected` on and click `Dim viewed jobs` when needed
 
@@ -38,8 +38,8 @@ JobShade dims viewed LinkedIn job cards in place instead of removing them.
 - Privacy policy text: [`docs/privacy-policy.md`](docs/privacy-policy.md)
 - Privacy policy page to host: [`docs/privacy.html`](docs/privacy.html)
 - Icon: [`assets/icons/icon-128.png`](assets/icons/icon-128.png)
-- Promo image 1: [`assets/store/jobshade-promo-1.png`](assets/store/jobshade-promo-1.png)
-- Promo image 2: [`assets/store/jobshade-promo-2.png`](assets/store/jobshade-promo-2.png)
+- Promo image 1: [`assets/store/linkedin-viewed-job-dimmer-promo-1.png`](assets/store/linkedin-viewed-job-dimmer-promo-1.png)
+- Promo image 2: [`assets/store/linkedin-viewed-job-dimmer-promo-2.png`](assets/store/linkedin-viewed-job-dimmer-promo-2.png)
 
 ## Notes
 

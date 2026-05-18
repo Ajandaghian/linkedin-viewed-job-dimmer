@@ -1,10 +1,10 @@
-# JobShade
+# LinkedIn Viewed Job Dimmer
 
 ## Short Description
 Dim viewed LinkedIn job cards in place.
 
 ## Long Description
-JobShade keeps your LinkedIn jobs search cleaner by dimming cards you have already viewed instead of removing them from the list.
+LinkedIn Viewed Job Dimmer keeps your LinkedIn jobs search cleaner by dimming cards you have already viewed instead of removing them from the list.
 
 Use `Always run` for automatic dimming on every LinkedIn jobs page, or leave it on `Only when selected` and trigger it manually when you want to clean up the list.
 
@@ -25,8 +25,8 @@ Productivity
 ## Listing Assets
 
 - Icon: `assets/icons/icon-128.png`
-- Screenshot 1: `assets/store/jobshade-promo-1.png`
-- Screenshot 2: `assets/store/jobshade-promo-2.png`
+- Screenshot 1: `assets/store/linkedin-viewed-job-dimmer-promo-1.png`
+- Screenshot 2: `assets/store/linkedin-viewed-job-dimmer-promo-2.png`
 
 ## Screenshot Captions
 
@@ -42,4 +42,4 @@ Productivity
 
 ## Privacy Summary
 
-JobShade does not send LinkedIn data to a server. The extension works locally in your browser and stores only the selected run mode.
+LinkedIn Viewed Job Dimmer does not send LinkedIn data to a server. The extension works locally in your browser and stores only the selected run mode.
