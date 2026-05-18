@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "LinkedIn Viewed Job Dimmer",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Dims viewed jobs in LinkedIn job search results and supports always-on mode.",
-  "permissions": ["activeTab", "scripting", "tabs"],
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
   "host_permissions": [
     "https://linkedin.com/jobs/*",
     "https://*.linkedin.com/jobs/*"

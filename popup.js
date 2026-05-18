@@ -4,6 +4,7 @@ const modeTitle = document.getElementById("modeTitle");
 const modeDescription = document.getElementById("modeDescription");
 const switchText = document.getElementById("switchText");
 const statusNode = document.getElementById("status");
+const STORAGE_KEY = "liViewedRemoverAlwaysOn";
 
 let currentAlwaysOn = false;
 
@@ -30,6 +31,28 @@ function isLinkedInJobsUrl(url) {
   return typeof url === "string" && url.includes("linkedin.com/jobs");
 }
 
+async function readAlwaysOnSetting() {
+  try {
+    if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+      const result = await chrome.storage.local.get(STORAGE_KEY);
+      return Boolean(result?.[STORAGE_KEY]);
+    }
+  } catch (_error) {
+    // Fallback below.
+  }
+
+  return false;
+}
+
+async function writeAlwaysOnSetting(alwaysOn) {
+  if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+    await chrome.storage.local.set({ [STORAGE_KEY]: Boolean(alwaysOn) });
+    return;
+  }
+
+  throw new Error("Storage is unavailable in this popup.");
+}
+
 async function getActiveTab() {
   const tabs = await chrome.tabs.query({
     active: true,
@@ -44,66 +67,6 @@ async function ensureContentScript(tabId) {
     target: { tabId },
     files: ["content.js"]
   });
-}
-
-async function readAlwaysOnFromTab(tabId) {
-  await ensureContentScript(tabId);
-
-  try {
-    const response = await chrome.tabs.sendMessage(tabId, {
-      type: "li-viewed-remover:get-mode"
-    });
-
-    if (response && response.ok) {
-      return Boolean(response.alwaysOn);
-    }
-  } catch (_error) {
-    // Fallback below.
-  }
-
-  const [result] = await chrome.scripting.executeScript({
-    target: { tabId },
-    func: () => {
-      if (typeof window.__liViewedRemoverGetAlwaysOn === "function") {
-        return Boolean(window.__liViewedRemoverGetAlwaysOn());
-      }
-
-      return false;
-    }
-  });
-
-  return Boolean(result?.result);
-}
-
-async function writeAlwaysOnToTab(tabId, alwaysOn) {
-  await ensureContentScript(tabId);
-
-  try {
-    const response = await chrome.tabs.sendMessage(tabId, {
-      type: "li-viewed-remover:set-mode",
-      alwaysOn
-    });
-
-    if (response && response.ok) {
-      return Boolean(response.alwaysOn);
-    }
-  } catch (_error) {
-    // Fallback below.
-  }
-
-  const [result] = await chrome.scripting.executeScript({
-    target: { tabId },
-    args: [alwaysOn],
-    func: (value) => {
-      if (typeof window.__liViewedRemoverSetAlwaysOn === "function") {
-        return Boolean(window.__liViewedRemoverSetAlwaysOn(value));
-      }
-
-      return Boolean(value);
-    }
-  });
-
-  return Boolean(result?.result ?? alwaysOn);
 }
 
 async function runDimming() {
@@ -158,17 +121,24 @@ async function runDimming() {
 
 async function initializePopup() {
   try {
+    const alwaysOn = await readAlwaysOnSetting();
+    setModeText(alwaysOn);
+
     const tab = await getActiveTab();
-    if (!tab || !tab.id || !isLinkedInJobsUrl(tab.url)) {
-      setModeText(false);
+    const isLinkedInTab = Boolean(tab && tab.id && isLinkedInJobsUrl(tab.url));
+
+    if (!isLinkedInTab) {
       dimButton.disabled = true;
-      alwaysOnToggle.disabled = true;
-      setStatus("Open a LinkedIn jobs tab first.", "info");
+      alwaysOnToggle.disabled = false;
+      setStatus(
+        alwaysOn
+          ? "Always run is on. It will apply the next time you open a LinkedIn jobs tab."
+          : "Only when selected is on. Toggle here to save the default for LinkedIn jobs tabs.",
+        "info"
+      );
       return;
     }
 
-    const alwaysOn = await readAlwaysOnFromTab(tab.id);
-    setModeText(alwaysOn);
     dimButton.disabled = false;
     alwaysOnToggle.disabled = false;
     setStatus(
@@ -186,17 +156,27 @@ async function initializePopup() {
 dimButton.addEventListener("click", runDimming);
 alwaysOnToggle.addEventListener("change", async () => {
   alwaysOnToggle.disabled = true;
+  const nextValue = alwaysOnToggle.checked;
 
   try {
+    await writeAlwaysOnSetting(nextValue);
+    setModeText(nextValue);
+
     const tab = await getActiveTab();
-    if (!tab || !tab.id || !isLinkedInJobsUrl(tab.url)) {
-      throw new Error("Open a LinkedIn jobs tab first.");
+    if (tab && tab.id && isLinkedInJobsUrl(tab.url)) {
+      try {
+        await ensureContentScript(tab.id);
+        await chrome.tabs.sendMessage(tab.id, {
+          type: "li-viewed-remover:set-mode",
+          alwaysOn: nextValue
+        });
+      } catch (_messageError) {
+        // The content script also listens to storage changes, so this is best-effort.
+      }
     }
 
-    const updated = await writeAlwaysOnToTab(tab.id, alwaysOnToggle.checked);
-    setModeText(updated);
     setStatus(
-      updated
+      nextValue
         ? "Always run is on. Viewed jobs will dim automatically."
         : "Only when selected is on. Click the button to dim viewed jobs.",
       "info"

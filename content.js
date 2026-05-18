@@ -16,7 +16,7 @@
     host: null,
     button: null,
     status: null,
-    pageStorageListenerAttached: false,
+    storageListenerAttached: false,
     messageListenerAttached: false
   });
 
@@ -30,7 +30,16 @@
     return state.autoEnabled || state.manualEnabled;
   }
 
-  function readAlwaysOnSetting() {
+  async function readAlwaysOnSetting() {
+    try {
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        const result = await chrome.storage.local.get(STORAGE_KEY);
+        return Boolean(result?.[STORAGE_KEY]);
+      }
+    } catch (_error) {
+      // Fallback below.
+    }
+
     try {
       return window.localStorage.getItem(STORAGE_KEY) === "1";
     } catch (_error) {
@@ -38,7 +47,16 @@
     }
   }
 
-  function writeAlwaysOnSetting(alwaysOn) {
+  async function writeAlwaysOnSetting(alwaysOn) {
+    try {
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        await chrome.storage.local.set({ [STORAGE_KEY]: Boolean(alwaysOn) });
+        return;
+      }
+    } catch (_error) {
+      // Fallback below.
+    }
+
     try {
       window.localStorage.setItem(STORAGE_KEY, alwaysOn ? "1" : "0");
     } catch (_error) {
@@ -368,9 +386,6 @@
 
   function applyAlwaysOnSetting(alwaysOn, options = {}) {
     state.autoEnabled = Boolean(alwaysOn);
-    if (readAlwaysOnSetting() !== state.autoEnabled) {
-      writeAlwaysOnSetting(state.autoEnabled);
-    }
     setObserverActive(hasActiveMode());
 
     if (!isLinkedInJobsPage()) {
@@ -403,26 +418,28 @@
 
   async function initializeAlwaysOnSetting() {
     try {
-      applyAlwaysOnSetting(readAlwaysOnSetting(), { announce: true });
+      applyAlwaysOnSetting(await readAlwaysOnSetting(), { announce: true });
     } catch (error) {
       console.error("LinkedIn dimmer failed to read settings:", error);
     }
   }
 
-  function attachPageStorageListener() {
-    if (state.pageStorageListenerAttached) {
+  function attachStorageListener() {
+    if (state.storageListenerAttached) {
       return;
     }
 
-    window.addEventListener("storage", (event) => {
-      if (event.storageArea !== window.localStorage || event.key !== STORAGE_KEY) {
-        return;
-      }
+    if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.onChanged) {
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (areaName !== "local" || !changes[STORAGE_KEY]) {
+          return;
+        }
 
-      applyAlwaysOnSetting(event.newValue === "1", { announce: true });
-    });
+        applyAlwaysOnSetting(Boolean(changes[STORAGE_KEY].newValue), { announce: true });
+      });
+    }
 
-    state.pageStorageListenerAttached = true;
+    state.storageListenerAttached = true;
   }
 
   function ensurePanel() {
@@ -502,15 +519,10 @@
 
     state.bootstrapped = true;
     ensurePanel();
-    attachPageStorageListener();
+    attachStorageListener();
     initializeAlwaysOnSetting();
   }
 
-  window.__liViewedRemoverGetAlwaysOn = () => readAlwaysOnSetting();
-  window.__liViewedRemoverSetAlwaysOn = (alwaysOn) => {
-    applyAlwaysOnSetting(Boolean(alwaysOn), { announce: true });
-    return state.autoEnabled;
-  };
   window.__liViewedRemoverRunCleanup = activateCleanup;
   window.__liViewedRemoverRunDimming = activateCleanup;
   window.__liViewedRemoverCleanOnce = dimViewedJobs;
@@ -532,21 +544,26 @@
       }
 
       if (message.type === "li-viewed-remover:get-mode") {
-        sendResponse({
-          ok: true,
-          alwaysOn: readAlwaysOnSetting()
+        Promise.resolve(readAlwaysOnSetting()).then((alwaysOn) => {
+          sendResponse({
+            ok: true,
+            alwaysOn
+          });
         });
-        return;
+        return true;
       }
 
       if (message.type === "li-viewed-remover:set-mode") {
         const alwaysOn = Boolean(message.alwaysOn);
-        const result = window.__liViewedRemoverSetAlwaysOn(alwaysOn);
-        sendResponse({
-          ok: true,
-          alwaysOn: result
-        });
-        return;
+        Promise.resolve(writeAlwaysOnSetting(alwaysOn))
+          .then(() => {
+            applyAlwaysOnSetting(alwaysOn, { announce: true });
+            sendResponse({
+              ok: true,
+              alwaysOn: state.autoEnabled
+            });
+          });
+        return true;
       }
 
       if (message.type === "li-viewed-remover:status") {
