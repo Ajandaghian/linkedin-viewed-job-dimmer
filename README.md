@@ -35,7 +35,8 @@ JobShade dims viewed LinkedIn job cards in place instead of removing them.
 ## Publishing Kit
 
 - Store listing copy: [`docs/chrome-web-store-listing.md`](docs/chrome-web-store-listing.md)
-- Privacy policy: [`docs/privacy-policy.md`](docs/privacy-policy.md)
+- Privacy policy text: [`docs/privacy-policy.md`](docs/privacy-policy.md)
+- Privacy policy page to host: [`docs/privacy.html`](docs/privacy.html)
 - Icon: [`assets/icons/icon-128.png`](assets/icons/icon-128.png)
 - Promo image 1: [`assets/store/jobshade-promo-1.png`](assets/store/jobshade-promo-1.png)
 - Promo image 2: [`assets/store/jobshade-promo-2.png`](assets/store/jobshade-promo-2.png)
