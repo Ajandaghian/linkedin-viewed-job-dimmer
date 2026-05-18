@@ -132,8 +132,8 @@ async function initializePopup() {
       alwaysOnToggle.disabled = false;
       setStatus(
         alwaysOn
-          ? "Always run is on. It will apply the next time you open a LinkedIn jobs tab."
-          : "Only when selected is on. Toggle here to save the default for LinkedIn jobs tabs.",
+          ? "JobShade is on. It will apply the next time you open a LinkedIn jobs tab."
+          : "JobShade is ready. Toggle here to save the default for LinkedIn jobs tabs.",
         "info"
       );
       return;
@@ -143,8 +143,8 @@ async function initializePopup() {
     alwaysOnToggle.disabled = false;
     setStatus(
       alwaysOn
-        ? "Always run is on. Viewed jobs will dim automatically."
-        : "Only when selected is on. Click the button to dim viewed jobs.",
+        ? "JobShade is on. Viewed jobs will dim automatically."
+        : "JobShade is in manual mode. Click the button to dim viewed jobs.",
       "info"
     );
   } catch (error) {
@@ -164,8 +164,8 @@ alwaysOnToggle.addEventListener("change", async () => {
 
     setStatus(
       nextValue
-        ? "Always run is on. Viewed jobs will dim automatically."
-        : "Only when selected is on. Click the button to dim viewed jobs.",
+        ? "JobShade is on. Viewed jobs will dim automatically."
+        : "JobShade is in manual mode. Click the button to dim viewed jobs.",
       "info"
     );
   } catch (error) {

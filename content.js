@@ -401,8 +401,8 @@
       const dimmed = dimViewedJobs({ quiet: true });
       setStatus(
         dimmed > 0
-          ? `Always run is on. Dimmed ${dimmed} viewed job${dimmed === 1 ? "" : "s"}.`
-          : "Always run is on. Watching for more viewed jobs.",
+          ? `JobShade is on. Dimmed ${dimmed} viewed job${dimmed === 1 ? "" : "s"}.`
+          : "JobShade is on. Watching for more viewed jobs.",
         dimmed > 0 ? "ok" : "info"
       );
       return;
@@ -410,7 +410,7 @@
 
     if (!state.manualEnabled) {
       setStatus(
-        "Only when selected is on. Use the button to dim viewed jobs on this page.",
+        "JobShade is in manual mode. Use the button to dim viewed jobs on this page.",
         "info"
       );
     }
@@ -453,11 +453,11 @@
       const status = panel.querySelector(`#${STATUS_ID}`);
 
       if (title) {
-        title.textContent = "Dim viewed jobs";
+        title.textContent = "JobShade";
       }
 
       if (copy) {
-        copy.textContent = "Runs on the open search page and keeps viewed cards in place while muting them to dark gray as new results load.";
+        copy.textContent = "Keeps viewed cards in place and mutes them to dark gray as new results load.";
       }
 
       if (button) {
@@ -478,7 +478,7 @@
 
     const eyebrow = document.createElement("p");
     eyebrow.className = "eyebrow";
-    eyebrow.textContent = "LinkedIn jobs";
+    eyebrow.textContent = "JobShade";
 
     const title = document.createElement("p");
     title.className = "title";
@@ -486,7 +486,7 @@
 
     const copy = document.createElement("p");
     copy.className = "copy";
-    copy.textContent = "Runs on the open search page and keeps viewed cards in place while muting them to dark gray as new results load.";
+    copy.textContent = "Keeps viewed cards in place and mutes them to dark gray as new results load.";
 
     const button = document.createElement("button");
     button.id = BUTTON_ID;

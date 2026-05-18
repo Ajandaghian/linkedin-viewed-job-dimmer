@@ -1,0 +1,45 @@
+# JobShade
+
+## Short Description
+Dim viewed LinkedIn job cards in place.
+
+## Long Description
+JobShade keeps your LinkedIn jobs search cleaner by dimming cards you have already viewed instead of removing them from the list.
+
+Use `Always run` for automatic dimming on every LinkedIn jobs page, or leave it on `Only when selected` and trigger it manually when you want to clean up the list.
+
+What it does:
+
+- Detects viewed job cards in LinkedIn job search results
+- Keeps viewed cards visible, but mutes them to a dark gray disabled style
+- Watches for newly loaded results and dims them automatically when enabled
+- Saves your chosen mode in the extension so it survives popup closes and tab changes
+- Runs locally in your browser
+
+## Suggested Store Keywords
+LinkedIn jobs, job search, productivity, recruiting, job board, browser extension, viewed jobs, candidate search, workflow, cleanup
+
+## Suggested Category
+Productivity
+
+## Listing Assets
+
+- Icon: `assets/icons/icon-128.png`
+- Screenshot 1: `assets/store/jobshade-promo-1.png`
+- Screenshot 2: `assets/store/jobshade-promo-2.png`
+
+## Screenshot Captions
+
+1. `Viewed jobs dimmed in the results list`
+2. `Always run or manual mode from the popup`
+
+## Permissions Justification
+
+- `activeTab`: lets the extension act on the current LinkedIn jobs tab when you click the popup button
+- `scripting`: injects the content script into the active tab when needed
+- `tabs`: reads the active tab so the popup knows whether LinkedIn is open
+- `storage`: saves the run mode locally so it persists between sessions
+
+## Privacy Summary
+
+JobShade does not send LinkedIn data to a server. The extension works locally in your browser and stores only the selected run mode.

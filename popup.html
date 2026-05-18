@@ -3,17 +3,28 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LinkedIn Viewed Job Dimmer</title>
+    <title>JobShade</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <main class="shell">
-      <p class="eyebrow">LinkedIn jobs</p>
-      <h1>Dim viewed jobs</h1>
-      <p class="copy">
-        Run this on the active LinkedIn jobs tab. It keeps cards whose footer says
-        <strong>Viewed</strong>, but mutes them into a dark gray disabled style.
-      </p>
+      <header class="hero">
+        <img class="brand-mark" src="assets/icons/icon-128.png" alt="" />
+        <div class="hero-copy">
+          <p class="eyebrow">JobShade</p>
+          <h1>Dim viewed jobs</h1>
+          <p class="copy">
+            Keep viewed LinkedIn job cards visible, but muted into a dark gray disabled
+            style.
+          </p>
+        </div>
+      </header>
+
+      <div class="feature-row" aria-label="Highlights">
+        <span class="chip">Always-on mode</span>
+        <span class="chip">No removals</span>
+        <span class="chip">Dark gray dimming</span>
+      </div>
 
       <section class="settings-card" aria-label="Run mode settings">
         <div class="settings-copy">

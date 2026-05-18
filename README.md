@@ -1,15 +1,21 @@
-# LinkedIn Viewed Job Dimmer
+# JobShade
 
-Chrome extension that dims viewed jobs in the LinkedIn jobs search list instead of removing them.
+![JobShade promo](assets/store/jobshade-promo-1.png)
+
+JobShade dims viewed LinkedIn job cards in place instead of removing them.
 
 ## What it does
 
 - Detects job cards in `li[data-occludable-job-id]`
-- Detects cards whose footer state says `Viewed`
-- Keeps watching the page so newly loaded viewed jobs stay dimmed too
-- Offers a popup switch for `Always run` or `Only when selected`
-- Adds a small on-page button plus a popup switch and button for manual runs
-- Saves the run mode in extension storage, so the setting survives popup closes, tab changes, and page reloads
+- Finds cards whose footer state says `Viewed`
+- Keeps the cards visible, but mutes them into a dark gray disabled style
+- Watches the page so newly loaded viewed jobs stay dimmed
+- Supports `Always run` and `Only when selected`
+- Saves your mode locally so it survives popup closes and page reloads
+
+## Screenshots
+
+![JobShade popup](assets/store/jobshade-promo-2.png)
 
 ## Install
 
@@ -17,16 +23,25 @@ Chrome extension that dims viewed jobs in the LinkedIn jobs search list instead 
 2. Enable `Developer mode`
 3. Click `Load unpacked`
 4. Select this folder
+5. Reload the LinkedIn jobs tab after installing
 
 ## Use
 
-- Open a LinkedIn jobs search page
-- Click the extension icon
-- Use the switch if you want `Always run`
-- Press `Dim viewed jobs`
-- After updating the extension, reload it once in `chrome://extensions` and refresh the LinkedIn tab
+- Open a live LinkedIn jobs search page
+- Click the JobShade extension icon
+- Choose `Always run` if you want automatic dimming
+- Otherwise leave `Only when selected` on and click `Dim viewed jobs` when needed
+
+## Publishing Kit
+
+- Store listing copy: [`docs/chrome-web-store-listing.md`](docs/chrome-web-store-listing.md)
+- Privacy policy: [`docs/privacy-policy.md`](docs/privacy-policy.md)
+- Icon: [`assets/icons/icon-128.png`](assets/icons/icon-128.png)
+- Promo image 1: [`assets/store/jobshade-promo-1.png`](assets/store/jobshade-promo-1.png)
+- Promo image 2: [`assets/store/jobshade-promo-2.png`](assets/store/jobshade-promo-2.png)
 
 ## Notes
 
-- This extension runs on live LinkedIn jobs pages, not on saved HTML snapshots opened from disk
+- The extension runs on live LinkedIn jobs pages, not on saved HTML snapshots opened from disk
 - If LinkedIn opens as `linkedin.com` instead of `www.linkedin.com`, the extension still matches it
+- The extension stores only the run mode locally in Chrome extension storage
