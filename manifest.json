@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "LinkedIn Viewed Job Remover",
+  "version": "1.0.0",
+  "description": "Removes viewed jobs from LinkedIn job search results.",
+  "permissions": ["activeTab", "scripting", "tabs"],
+  "host_permissions": ["https://www.linkedin.com/jobs/*"],
+  "action": {
+    "default_title": "Remove viewed jobs",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/jobs/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

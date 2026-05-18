@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LinkedIn Viewed Job Remover</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <p class="eyebrow">LinkedIn jobs</p>
+      <h1>Remove viewed jobs</h1>
+      <p class="copy">
+        Run this on the active LinkedIn jobs tab. It removes cards whose footer says
+        <strong>Viewed</strong> and keeps cleaning new results that appear afterward.
+      </p>
+
+      <button id="cleanButton" class="primary-button" type="button">Remove viewed jobs</button>
+
+      <div id="status" class="status" aria-live="polite">
+        Open a LinkedIn jobs tab, then click the button above.
+      </div>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
