@@ -9,6 +9,7 @@ Chrome extension that dims viewed jobs in the LinkedIn jobs search list instead 
 - Keeps watching the page so newly loaded viewed jobs stay dimmed too
 - Offers a popup switch for `Always run` or `Only when selected`
 - Adds a small on-page button plus a popup switch and button for manual runs
+- Saves the run mode on the LinkedIn jobs site itself, so the setting survives popup closes and page reloads
 
 ## Install
 
@@ -23,3 +24,8 @@ Chrome extension that dims viewed jobs in the LinkedIn jobs search list instead 
 - Click the extension icon
 - Use the switch if you want `Always run`
 - Press `Dim viewed jobs`
+
+## Notes
+
+- This extension runs on live LinkedIn jobs pages, not on saved HTML snapshots opened from disk
+- If LinkedIn opens as `linkedin.com` instead of `www.linkedin.com`, the extension still matches it
