@@ -3,15 +3,32 @@
   const HOST_ID = "li-viewed-remover-host";
   const STYLE_ID = "li-viewed-remover-style";
   const CARD_STYLE_ID = "li-viewed-remover-card-style";
+  const HIGHLIGHT_STYLE_ID = "li-viewed-remover-highlight-style";
   const STORAGE_KEY = "liViewedRemoverAlwaysOn";
+  const HIGHLIGHT_STORAGE_KEY = "liViewedRemoverHighlightRules";
   const BUTTON_ID = "li-viewed-remover-button";
   const STATUS_ID = "li-viewed-remover-status";
+  const HIGHLIGHT_MARK_CLASS = "li-viewed-remover-keyword-mark";
+  const HIGHLIGHT_COLOR_MAP = {
+    amber: { bg: "#fde68a", fg: "#1f2937" },
+    sky: { bg: "#bae6fd", fg: "#0f172a" },
+    emerald: { bg: "#bbf7d0", fg: "#064e3b" },
+    rose: { bg: "#fecdd3", fg: "#881337" },
+    violet: { bg: "#ddd6fe", fg: "#312e81" },
+    orange: { bg: "#fed7aa", fg: "#7c2d12" },
+    teal: { bg: "#99f6e4", fg: "#134e4a" },
+    pink: { bg: "#fbcfe8", fg: "#831843" },
+    lime: { bg: "#d9f99d", fg: "#365314" },
+    slate: { bg: "#cbd5e1", fg: "#0f172a" }
+  };
 
   const state = window[GLOBAL_KEY] || (window[GLOBAL_KEY] = {
     bootstrapped: false,
     autoEnabled: false,
     manualEnabled: false,
-    cleanupQueued: false,
+    refreshQueued: false,
+    highlightRules: [],
+    highlightSignature: "",
     observer: null,
     host: null,
     button: null,
@@ -27,7 +44,7 @@
   }
 
   function hasActiveMode() {
-    return state.autoEnabled || state.manualEnabled;
+    return state.autoEnabled || state.manualEnabled || state.highlightRules.length > 0;
   }
 
   async function readAlwaysOnSetting() {
@@ -64,12 +81,185 @@
     }
   }
 
+  async function readHighlightRulesSetting() {
+    try {
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        const result = await chrome.storage.local.get(HIGHLIGHT_STORAGE_KEY);
+        return result?.[HIGHLIGHT_STORAGE_KEY] || "[]";
+      }
+    } catch (_error) {
+      // Fallback below.
+    }
+
+    try {
+      return window.localStorage.getItem(HIGHLIGHT_STORAGE_KEY) || "[]";
+    } catch (_error) {
+      return "[]";
+    }
+  }
+
+  async function writeHighlightRulesSetting(rules) {
+    const serialized = JSON.stringify(rules);
+
+    try {
+      if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+        await chrome.storage.local.set({ [HIGHLIGHT_STORAGE_KEY]: serialized });
+        return;
+      }
+    } catch (_error) {
+      // Fallback below.
+    }
+
+    try {
+      window.localStorage.setItem(HIGHLIGHT_STORAGE_KEY, serialized);
+    } catch (_error) {
+      // Ignore storage failures; the page still gets updated for this session.
+    }
+  }
+
+  function normalizeText(value) {
+    return String(value ?? "").replace(/\r\n/g, "\n");
+  }
+
+  function normalizeHighlightColor(color) {
+    return Object.prototype.hasOwnProperty.call(HIGHLIGHT_COLOR_MAP, color)
+      ? color
+      : "amber";
+  }
+
+  function parseHighlightTerms(rawKeywords) {
+    const seen = new Set();
+    const terms = [];
+
+    for (const fragment of normalizeText(rawKeywords).split(/[,\n;]+/)) {
+      const term = fragment.trim();
+      if (!term) {
+        continue;
+      }
+
+      const lower = term.toLowerCase();
+      if (seen.has(lower)) {
+        continue;
+      }
+
+      seen.add(lower);
+      terms.push(term);
+    }
+
+    return terms;
+  }
+
+  function normalizeHighlightRules(rawValue) {
+    const parsed = Array.isArray(rawValue)
+      ? rawValue
+      : (() => {
+          try {
+            return JSON.parse(normalizeText(rawValue) || "[]");
+          } catch (_error) {
+            return [];
+          }
+        })();
+
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    const seen = new Set();
+    const rules = [];
+
+    for (const [index, rule] of parsed.entries()) {
+      const keywords = normalizeText(
+        typeof rule?.keywords === "string"
+          ? rule.keywords
+          : typeof rule?.terms === "string"
+            ? rule.terms
+            : ""
+      ).trim();
+      const terms = parseHighlightTerms(keywords);
+      if (!terms.length) {
+        continue;
+      }
+
+      const color = normalizeHighlightColor(rule?.color);
+      const signature = `${color}::${terms.map((term) => term.toLowerCase()).join("|")}`;
+      if (seen.has(signature)) {
+        continue;
+      }
+
+      seen.add(signature);
+      rules.push({
+        id: typeof rule?.id === "string" && rule.id ? rule.id : `rule-${index}`,
+        color,
+        keywords,
+        terms
+      });
+    }
+
+    return rules;
+  }
+
+  function buildHighlightSignature(rules) {
+    return JSON.stringify(
+      rules.map((rule) => ({
+        color: rule.color,
+        keywords: rule.keywords,
+        terms: rule.terms.map((term) => term.toLowerCase())
+      }))
+    );
+  }
+
+  function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function buildHighlightPattern(term) {
+    const trimmed = term.trim();
+    if (!trimmed) {
+      return "";
+    }
+
+    const escaped = escapeRegex(trimmed).replace(/\s+/g, "\\s+");
+    const startsWithWord = /^[A-Za-z0-9]/.test(trimmed);
+    const endsWithWord = /[A-Za-z0-9]$/.test(trimmed);
+
+    return `${startsWithWord ? "\\b" : ""}${escaped}${endsWithWord ? "\\b" : ""}`;
+  }
+
+  function buildHighlightMatcher(rules) {
+    const groupColors = {};
+    const groupTerms = {};
+    const patterns = [];
+    let index = 0;
+
+    for (const rule of rules) {
+      for (const term of rule.terms) {
+        const pattern = buildHighlightPattern(term);
+        if (!pattern) {
+          continue;
+        }
+
+        const groupName = `k${index}`;
+        patterns.push(`(?<${groupName}>${pattern})`);
+        groupColors[groupName] = rule.color;
+        groupTerms[groupName] = term;
+        index += 1;
+      }
+    }
+
+    return {
+      regex: patterns.length ? new RegExp(patterns.join("|"), "gi") : null,
+      groupColors,
+      groupTerms
+    };
+  }
+
   function setObserverActive(active) {
     if (!active) {
       if (state.observer) {
         state.observer.disconnect();
         state.observer = null;
       }
+      state.refreshQueued = false;
       return;
     }
 
@@ -230,6 +420,195 @@
     (document.head || document.documentElement).appendChild(style);
   }
 
+  function ensureHighlightStyles() {
+    if (document.getElementById(HIGHLIGHT_STYLE_ID)) {
+      return;
+    }
+
+    const style = document.createElement("style");
+    style.id = HIGHLIGHT_STYLE_ID;
+    style.textContent = `
+      mark.${HIGHLIGHT_MARK_CLASS} {
+        padding: 0 0.16em !important;
+        border-radius: 4px !important;
+        box-decoration-break: clone !important;
+        -webkit-box-decoration-break: clone !important;
+        text-shadow: none !important;
+        font-weight: inherit !important;
+      }
+    `;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  function clearKeywordHighlights(root = document) {
+    const marks = Array.from(root.querySelectorAll(`mark.${HIGHLIGHT_MARK_CLASS}`));
+
+    for (const mark of marks) {
+      const textNode = document.createTextNode(mark.textContent || "");
+      mark.replaceWith(textNode);
+    }
+  }
+
+  function findHighlightRoot() {
+    const selectors = [
+      "div.scaffold-layout__detail",
+      "div.jobs-search__job-details--container",
+      "div.jobs-search__job-details",
+      "section.jobs-search__job-details",
+      "main"
+    ];
+
+    for (const selector of selectors) {
+      const element = document.querySelector(selector);
+      if (element) {
+        return element;
+      }
+    }
+
+    const heading = Array.from(document.querySelectorAll("h1, h2, h3, [role='heading']"))
+      .find((element) => /\b(about the job|job description|description)\b/i.test(element.textContent || ""));
+
+    if (heading) {
+      return heading.closest("section, article, div") || heading.parentElement || null;
+    }
+
+    return document.body || document.documentElement || null;
+  }
+
+  function collectHighlightTextNodes(root) {
+    const nodes = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const text = node.nodeValue || "";
+        if (!text.trim()) {
+          return NodeFilter.FILTER_REJECT;
+        }
+
+        const parent = node.parentElement;
+        if (!parent) {
+          return NodeFilter.FILTER_REJECT;
+        }
+
+        if (parent.closest(`mark.${HIGHLIGHT_MARK_CLASS}`)) {
+          return NodeFilter.FILTER_REJECT;
+        }
+
+        if (
+          parent.closest(
+            "script, style, noscript, svg, path, button, input, textarea, select, option, [contenteditable='true'], [aria-hidden='true']"
+          )
+        ) {
+          return NodeFilter.FILTER_REJECT;
+        }
+
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+
+    let current = walker.nextNode();
+    while (current) {
+      nodes.push(current);
+      current = walker.nextNode();
+    }
+
+    return nodes;
+  }
+
+  function highlightTextNode(textNode, matcher) {
+    const text = textNode.nodeValue || "";
+    const { regex, groupColors } = matcher;
+    if (!regex) {
+      return 0;
+    }
+
+    const matches = Array.from(text.matchAll(regex));
+    if (!matches.length) {
+      return 0;
+    }
+
+    const fragment = document.createDocumentFragment();
+    let cursor = 0;
+    let count = 0;
+
+    for (const match of matches) {
+      const index = match.index ?? 0;
+      const matchedText = match[0];
+      const end = index + matchedText.length;
+
+      if (end <= cursor) {
+        continue;
+      }
+
+      if (index > cursor) {
+        fragment.appendChild(document.createTextNode(text.slice(cursor, index)));
+      }
+
+      let groupName = "";
+      if (match.groups) {
+        for (const [name, value] of Object.entries(match.groups)) {
+          if (value !== undefined) {
+            groupName = name;
+            break;
+          }
+        }
+      }
+
+      const color = normalizeHighlightColor(groupColors[groupName]);
+      const palette = HIGHLIGHT_COLOR_MAP[color];
+      const mark = document.createElement("mark");
+      mark.className = HIGHLIGHT_MARK_CLASS;
+      mark.dataset.highlightColor = color;
+      mark.style.backgroundColor = palette.bg;
+      mark.style.color = palette.fg;
+      mark.textContent = matchedText;
+      fragment.appendChild(mark);
+
+      cursor = end;
+      count += 1;
+    }
+
+    if (cursor < text.length) {
+      fragment.appendChild(document.createTextNode(text.slice(cursor)));
+    }
+
+    textNode.parentNode.replaceChild(fragment, textNode);
+    return count;
+  }
+
+  function highlightKeywords(options = {}) {
+    if (!isLinkedInJobsPage() || !state.highlightRules.length) {
+      return 0;
+    }
+
+    const { quiet = false } = options;
+    const root = findHighlightRoot();
+    if (!root) {
+      return 0;
+    }
+
+    ensureHighlightStyles();
+    const matcher = buildHighlightMatcher(state.highlightRules);
+    if (!matcher.regex) {
+      return 0;
+    }
+
+    let highlighted = 0;
+    for (const textNode of collectHighlightTextNodes(root)) {
+      highlighted += highlightTextNode(textNode, matcher);
+    }
+
+    if (!quiet) {
+      setStatus(
+        highlighted > 0
+          ? `Highlighted ${highlighted} JD match${highlighted === 1 ? "" : "es"}.`
+          : "No keyword matches found in the JD.",
+        highlighted > 0 ? "ok" : "info"
+      );
+    }
+
+    return highlighted;
+  }
+
   function ensureHost() {
     if (state.host && state.host.isConnected && state.host.shadowRoot) {
       ensureStyles(state.host.shadowRoot);
@@ -325,16 +704,71 @@
     return dimmed;
   }
 
-  function scheduleCleanup() {
-    if (!hasActiveMode() || state.cleanupQueued) {
+  function composeStatusMessage(dimmed, highlighted) {
+    const parts = [];
+
+    if (state.autoEnabled || state.manualEnabled) {
+      if (dimmed > 0) {
+        parts.push(`Dimmed ${dimmed} viewed job${dimmed === 1 ? "" : "s"}.`);
+      } else if (state.autoEnabled) {
+        parts.push("Watching for viewed jobs.");
+      } else {
+        parts.push("Manual dimming is on. Watching for viewed jobs.");
+      }
+    }
+
+    if (state.highlightRules.length > 0) {
+      const ruleCount = state.highlightRules.length;
+      if (highlighted > 0) {
+        parts.push(
+          `Highlighted ${highlighted} match${highlighted === 1 ? "" : "es"} across ${ruleCount} keyword set${ruleCount === 1 ? "" : "s"}.`
+        );
+      } else {
+        parts.push(`Watching for ${ruleCount} keyword set${ruleCount === 1 ? "" : "s"}.`);
+      }
+    }
+
+    if (!parts.length) {
+      parts.push("Ready to dim viewed jobs and highlight saved keyword sets.");
+    }
+
+    return parts.join(" ");
+  }
+
+  function refreshActiveFeatures(options = {}) {
+    if (!isLinkedInJobsPage()) {
+      return { dimmed: 0, highlighted: 0 };
+    }
+
+    const { quiet = false, resetHighlights = false } = options;
+
+    if (resetHighlights) {
+      clearKeywordHighlights(document);
+    }
+
+    const dimmed = state.autoEnabled || state.manualEnabled ? dimViewedJobs({ quiet: true }) : 0;
+    const highlighted = state.highlightRules.length ? highlightKeywords({ quiet: true }) : 0;
+
+    if (!quiet) {
+      setStatus(
+        composeStatusMessage(dimmed, highlighted),
+        dimmed > 0 || highlighted > 0 ? "ok" : "info"
+      );
+    }
+
+    return { dimmed, highlighted };
+  }
+
+  function scheduleRefresh() {
+    if (!hasActiveMode() || state.refreshQueued) {
       return;
     }
 
-    state.cleanupQueued = true;
+    state.refreshQueued = true;
     queueMicrotask(() => {
-      state.cleanupQueued = false;
+      state.refreshQueued = false;
       if (hasActiveMode()) {
-        dimViewedJobs({ quiet: true });
+        refreshActiveFeatures({ quiet: true });
       }
     });
   }
@@ -359,7 +793,7 @@
 
     state.observer = new MutationObserver(() => {
       if (hasActiveMode()) {
-        scheduleCleanup();
+        scheduleRefresh();
       }
     });
 
@@ -371,16 +805,9 @@
 
   function activateCleanup() {
     state.manualEnabled = true;
-    startObserver();
+    setObserverActive(hasActiveMode());
 
-    const dimmed = dimViewedJobs({ quiet: true });
-    setStatus(
-      dimmed > 0
-        ? `Dimmed ${dimmed} viewed job${dimmed === 1 ? "" : "s"}. Watching for more.`
-        : "No viewed jobs found to dim. Watching for more.",
-      dimmed > 0 ? "ok" : "info"
-    );
-
+    const { dimmed } = refreshActiveFeatures({ quiet: false });
     return dimmed;
   }
 
@@ -392,33 +819,59 @@
       return;
     }
 
-    const { announce = true } = options;
-    if (!announce) {
+    if (options.announce === false) {
       return;
     }
 
-    if (state.autoEnabled) {
-      const dimmed = dimViewedJobs({ quiet: true });
-      setStatus(
-        dimmed > 0
-          ? `LinkedIn Viewed Job Dimmer is on. Dimmed ${dimmed} viewed job${dimmed === 1 ? "" : "s"}.`
-          : "LinkedIn Viewed Job Dimmer is on. Watching for more viewed jobs.",
-        dimmed > 0 ? "ok" : "info"
-      );
-      return;
-    }
-
-    if (!state.manualEnabled) {
-      setStatus(
-        "LinkedIn Viewed Job Dimmer is in manual mode. Use the button to dim viewed jobs on this page.",
-        "info"
-      );
-    }
+    refreshActiveFeatures({ quiet: false });
   }
 
-  async function initializeAlwaysOnSetting() {
+  function applyHighlightRules(rawRules, options = {}) {
+    const nextRules = normalizeHighlightRules(rawRules);
+    const nextSignature = buildHighlightSignature(nextRules);
+    const rulesChanged = nextSignature !== state.highlightSignature;
+
+    state.highlightRules = nextRules;
+    state.highlightSignature = nextSignature;
+    setObserverActive(hasActiveMode());
+
+    if (!isLinkedInJobsPage()) {
+      return {
+        dimmed: 0,
+        highlighted: 0,
+        ruleCount: nextRules.length,
+        changed: rulesChanged
+      };
+    }
+
+    const { quiet = false } = options;
+    const result = refreshActiveFeatures({
+      quiet,
+      resetHighlights: rulesChanged || nextRules.length === 0 || options.resetExistingHighlights === true
+    });
+
+    return {
+      ...result,
+      ruleCount: nextRules.length,
+      changed: rulesChanged
+    };
+  }
+
+  async function initializeSettings() {
     try {
-      applyAlwaysOnSetting(await readAlwaysOnSetting(), { announce: true });
+      const [alwaysOn, rawRules] = await Promise.all([
+        readAlwaysOnSetting(),
+        readHighlightRulesSetting()
+      ]);
+
+      state.autoEnabled = Boolean(alwaysOn);
+      state.highlightRules = normalizeHighlightRules(rawRules);
+      state.highlightSignature = buildHighlightSignature(state.highlightRules);
+      setObserverActive(hasActiveMode());
+
+      if (isLinkedInJobsPage()) {
+        refreshActiveFeatures({ quiet: false, resetHighlights: true });
+      }
     } catch (error) {
       console.error("LinkedIn dimmer failed to read settings:", error);
     }
@@ -431,11 +884,36 @@
 
     if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.onChanged) {
       chrome.storage.onChanged.addListener((changes, areaName) => {
-        if (areaName !== "local" || !changes[STORAGE_KEY]) {
+        if (areaName !== "local") {
           return;
         }
 
-        applyAlwaysOnSetting(Boolean(changes[STORAGE_KEY].newValue), { announce: true });
+        let shouldRefresh = false;
+        let resetHighlights = false;
+
+        if (changes[STORAGE_KEY]) {
+          state.autoEnabled = Boolean(changes[STORAGE_KEY].newValue);
+          shouldRefresh = true;
+        }
+
+        if (changes[HIGHLIGHT_STORAGE_KEY]) {
+          state.highlightRules = normalizeHighlightRules(changes[HIGHLIGHT_STORAGE_KEY].newValue);
+          state.highlightSignature = buildHighlightSignature(state.highlightRules);
+          shouldRefresh = true;
+          resetHighlights = true;
+        }
+
+        if (!shouldRefresh) {
+          return;
+        }
+
+        setObserverActive(hasActiveMode());
+        if (isLinkedInJobsPage()) {
+          refreshActiveFeatures({
+            quiet: false,
+            resetHighlights
+          });
+        }
       });
     }
 
@@ -453,11 +931,11 @@
       const status = panel.querySelector(`#${STATUS_ID}`);
 
       if (title) {
-          title.textContent = "LinkedIn Viewed Job Dimmer";
+        title.textContent = "LinkedIn Viewed Job Dimmer";
       }
 
       if (copy) {
-        copy.textContent = "Keeps viewed cards in place and mutes them to dark gray as new results load.";
+        copy.textContent = "Keeps viewed cards in place, then highlights saved keyword sets in the main JD.";
       }
 
       if (button) {
@@ -465,7 +943,7 @@
       }
 
       if (status) {
-        status.textContent = "Ready to dim the current LinkedIn results list.";
+        status.textContent = "Ready to dim viewed jobs and highlight saved keyword sets.";
       }
 
       state.button = button || state.button;
@@ -486,7 +964,7 @@
 
     const copy = document.createElement("p");
     copy.className = "copy";
-    copy.textContent = "Keeps viewed cards in place and mutes them to dark gray as new results load.";
+    copy.textContent = "Keeps viewed cards in place, then highlights saved keyword sets in the main JD.";
 
     const button = document.createElement("button");
     button.id = BUTTON_ID;
@@ -501,7 +979,7 @@
     status.id = STATUS_ID;
     status.className = "status";
     status.dataset.tone = "info";
-    status.textContent = "Ready to dim the current LinkedIn results list.";
+    status.textContent = "Ready to dim viewed jobs and highlight saved keyword sets.";
 
     panel.append(eyebrow, title, copy, button, status);
     shadowRoot.appendChild(panel);
@@ -520,12 +998,15 @@
     state.bootstrapped = true;
     ensurePanel();
     attachStorageListener();
-    initializeAlwaysOnSetting();
+    initializeSettings();
   }
 
   window.__liViewedRemoverRunCleanup = activateCleanup;
   window.__liViewedRemoverRunDimming = activateCleanup;
   window.__liViewedRemoverCleanOnce = dimViewedJobs;
+  window.__liViewedRemoverHighlightOnce = highlightKeywords;
+  window.__liViewedRemoverRefreshHighlights = () => refreshActiveFeatures({ quiet: false }).highlighted;
+  window.__liViewedRemoverApplyHighlightRules = (rules) => applyHighlightRules(rules, { quiet: false }).highlighted;
 
   if (isLinkedInJobsPage()) {
     bootstrap();
@@ -566,12 +1047,49 @@
         return true;
       }
 
+      if (message.type === "li-viewed-remover:get-highlight-rules") {
+        sendResponse({
+          ok: true,
+          rules: state.highlightRules,
+          ruleCount: state.highlightRules.length
+        });
+        return;
+      }
+
+      if (message.type === "li-viewed-remover:set-highlight-rules") {
+        Promise.resolve(writeHighlightRulesSetting(message.rules || []))
+          .then(() => {
+            const result = applyHighlightRules(message.rules || [], {
+              quiet: false,
+              resetExistingHighlights: true
+            });
+            sendResponse({
+              ok: true,
+              highlighted: result.highlighted,
+              ruleCount: result.ruleCount
+            });
+          });
+        return true;
+      }
+
+      if (message.type === "li-viewed-remover:refresh-highlights") {
+        const result = refreshActiveFeatures({ quiet: false });
+        sendResponse({
+          ok: true,
+          dimmed: result.dimmed,
+          highlighted: result.highlighted,
+          ruleCount: state.highlightRules.length
+        });
+        return;
+      }
+
       if (message.type === "li-viewed-remover:status") {
         sendResponse({
           ok: true,
           autoEnabled: state.autoEnabled,
           manualEnabled: state.manualEnabled,
-          bootstrapped: state.bootstrapped
+          bootstrapped: state.bootstrapped,
+          highlightRuleCount: state.highlightRules.length
         });
       }
     });

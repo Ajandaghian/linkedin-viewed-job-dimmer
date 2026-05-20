@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LinkedIn Viewed Job Dimmer</title>
+    <title>LinkedIn Job Dimmer &amp; Highlighter</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
@@ -12,18 +12,18 @@
         <img class="brand-mark" src="assets/icons/icon-128.png" alt="" />
         <div class="hero-copy">
           <p class="eyebrow">LinkedIn Viewed Job Dimmer</p>
-          <h1>Dim viewed jobs</h1>
+          <h1>Dim and highlight jobs</h1>
           <p class="copy">
-            Keep viewed LinkedIn job cards visible, but muted into a dark gray disabled
-            style.
+            Keep viewed LinkedIn job cards visible, then highlight saved keyword groups
+            in the main job description.
           </p>
         </div>
       </header>
 
       <div class="feature-row" aria-label="Highlights">
         <span class="chip">Always-on mode</span>
-        <span class="chip">No removals</span>
-        <span class="chip">Dark gray dimming</span>
+        <span class="chip">Editable keyword sets</span>
+        <span class="chip">10 preset colors</span>
       </div>
 
       <section class="settings-card" aria-label="Run mode settings">
@@ -44,10 +44,33 @@
         </label>
       </section>
 
+      <section class="keyword-card" aria-label="Keyword highlight settings">
+        <div class="settings-copy">
+          <p class="settings-label">Keyword sets</p>
+          <p class="settings-title" id="keywordTitle">Highlight terms in the JD</p>
+          <p class="settings-desc">
+            Add one row per color. Separate keywords with commas or semicolons. Example:
+            SQL, Python, year, years.
+          </p>
+        </div>
+
+        <div id="keywordRules" class="keyword-rules" aria-label="Keyword groups"></div>
+
+        <div class="keyword-actions">
+          <button id="addRuleButton" class="secondary-button secondary-button--ghost" type="button">
+            Add set
+          </button>
+          <button id="saveRulesButton" class="secondary-button" type="button">
+            Save and highlight
+          </button>
+        </div>
+      </section>
+
       <button id="dimButton" class="primary-button" type="button">Dim viewed jobs</button>
 
       <div id="status" class="status" aria-live="polite">
-        Open a LinkedIn jobs tab, then choose a mode or click the button above.
+        Open a LinkedIn jobs tab, then choose a mode, edit your keyword sets, or click
+        the button above.
       </div>
     </main>
 

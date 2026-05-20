@@ -2,16 +2,18 @@
 
 ![LinkedIn Viewed Job Dimmer promo](assets/store/linkedin-viewed-job-dimmer-promo-1.png)
 
-LinkedIn Viewed Job Dimmer dims viewed LinkedIn job cards in place instead of removing them.
+LinkedIn Viewed Job Dimmer dims viewed LinkedIn job cards in place and highlights saved keyword groups in the main job description.
 
 ## What it does
 
 - Detects job cards in `li[data-occludable-job-id]`
 - Finds cards whose footer state says `Viewed`
 - Keeps the cards visible, but mutes them into a dark gray disabled style
-- Watches the page so newly loaded viewed jobs stay dimmed
+- Highlights saved keyword groups in the main JD with 10 preset colors
+- Supports multiple keyword sets in the popup editor
+- Watches the page so newly loaded viewed jobs and JD content stay in sync
 - Supports `Always run` and `Only when selected`
-- Saves your mode locally so it survives popup closes and page reloads
+- Saves your mode and keyword groups locally so they survive popup closes and page reloads
 
 ## Screenshots
 
@@ -30,6 +32,8 @@ LinkedIn Viewed Job Dimmer dims viewed LinkedIn job cards in place instead of re
 - Open a live LinkedIn jobs search page
 - Click the LinkedIn Viewed Job Dimmer extension icon
 - Choose `Always run` if you want automatic dimming
+- Add one or more keyword sets in the popup, then pick a preset color for each set
+- Click `Save and highlight` to apply the keyword groups to the current job description
 - Otherwise leave `Only when selected` on and click `Dim viewed jobs` when needed
 
 ## Publishing Kit
@@ -45,4 +49,4 @@ LinkedIn Viewed Job Dimmer dims viewed LinkedIn job cards in place instead of re
 
 - The extension runs on live LinkedIn jobs pages, not on saved HTML snapshots opened from disk
 - If LinkedIn opens as `linkedin.com` instead of `www.linkedin.com`, the extension still matches it
-- The extension stores only the run mode locally in Chrome extension storage
+- The extension stores the run mode and keyword groups locally in Chrome extension storage

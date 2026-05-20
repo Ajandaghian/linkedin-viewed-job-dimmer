@@ -1,19 +1,21 @@
 # LinkedIn Viewed Job Dimmer
 
 ## Short Description
-Dim viewed LinkedIn job cards in place.
+Dim viewed LinkedIn job cards in place and highlight saved keyword groups in the main JD.
 
 ## Long Description
-LinkedIn Viewed Job Dimmer keeps your LinkedIn jobs search cleaner by dimming cards you have already viewed instead of removing them from the list.
+LinkedIn Viewed Job Dimmer keeps your LinkedIn jobs search cleaner by dimming cards you have already viewed instead of removing them from the list, while also highlighting saved keyword groups in the main job description.
 
-Use `Always run` for automatic dimming on every LinkedIn jobs page, or leave it on `Only when selected` and trigger it manually when you want to clean up the list.
+Use `Always run` for automatic dimming on every LinkedIn jobs page, or leave it on `Only when selected` and trigger it manually when you want to clean up the list. Add one or more keyword groups in the popup, then pick a preset color for each group to highlight matches in the JD.
 
 What it does:
 
 - Detects viewed job cards in LinkedIn job search results
 - Keeps viewed cards visible, but mutes them to a dark gray disabled style
+- Highlights saved keyword groups in the main job description with preset colors
+- Lets you edit multiple keyword sets directly in the popup
 - Watches for newly loaded results and dims them automatically when enabled
-- Saves your chosen mode in the extension so it survives popup closes and tab changes
+- Saves your chosen mode and keyword groups in the extension so it survives popup closes and tab changes
 - Runs locally in your browser
 
 ## Suggested Store Keywords
@@ -42,4 +44,4 @@ Productivity
 
 ## Privacy Summary
 
-LinkedIn Viewed Job Dimmer does not send LinkedIn data to a server. The extension works locally in your browser and stores only the selected run mode.
+LinkedIn Viewed Job Dimmer does not send LinkedIn data to a server. The extension works locally in your browser and stores only the selected run mode and keyword groups.
